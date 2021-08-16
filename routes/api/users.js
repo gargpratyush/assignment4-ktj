@@ -8,6 +8,7 @@ const passport = require('passport');
 
 //Load input Validation
 const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 
 //Load User Model
@@ -36,7 +37,7 @@ router.post('/register', (req, res) => {
 
   User.findOne({ email: req.body.email }) //to use req.body, you need the middleware 'Body Parser'
     .then(user => {
-       //to find if the email user is trying to register with is already registered or not
+       //to find if the ema il user is trying to register with is already registered or not
       if(user) {   //If such a user with already registered email is found then change the http status to 400 (error)
         errors.email = 'Email already exists';
         return res.status(400).json(errors);
@@ -73,6 +74,14 @@ router.post('/register', (req, res) => {
 //@desc Login user / Returning JWT token
 //@access Public
 router.post('/login', (req, res) => {
+  const {errors, isValid} = validateLoginInput(req.body); //req.body requests everything which is sent to this route, ie, name, email, password.
+
+  //if isValid is false, that means there are errors.
+  if(!isValid) {
+    return res.status(400).json(errors);
+  }
+
+
   const email = req.body.email;
   const password = req.body.password;
   //here we are logging in the user, ie, if the email id password combination is correct then he is allowed to go the website.
@@ -81,7 +90,8 @@ router.post('/login', (req, res) => {
     .then(user=> {
       //Check for user
       if(!user) {
-        return res.status(404).json({email: 'User not found'});
+        errors.email = 'User not found';
+        return res.status(404).json(errors);
       }
     
     //Check password
@@ -105,7 +115,8 @@ router.post('/login', (req, res) => {
               })
           }); //token expires if unused for an hour
         } else {
-          return res.status(400).json({password: 'Password incorrect'});
+          errors.password = 'Password Incorrect';
+          return res.status(400).json(errors);
         }
 
       })
